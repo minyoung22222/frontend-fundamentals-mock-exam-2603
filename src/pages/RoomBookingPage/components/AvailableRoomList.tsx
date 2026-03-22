@@ -7,7 +7,8 @@ import axios from 'axios';
 import { useRooms } from 'queries/useRooms';
 import { useCreateReservation } from '../queries/useCreateReservation';
 import { useReservations } from 'queries/useReservations';
-import { EQUIPMENT_LABELS } from 'constants/equipment';
+import { MESSAGES } from '../constants/messages';
+import { filterAvailableRooms, sortRooms, formatRoomDescription } from '../utils/room';
 import { HorizontalPadding } from 'components/layout/HorizontalPadding';
 import { SectionTitle } from 'components/content/SectionTitle';
 import { MessageBanner } from 'components/feedback/MessageBanner';
@@ -32,38 +33,26 @@ export function AvailableRoomList() {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const filterKey = `${date}-${startTime}-${endTime}-${attendees}-${equipment.join(',')}-${preferredFloor}`;
+
   useEffect(() => {
     setSelectedRoomId(null);
     setErrorMessage(null);
-  }, [date, startTime, endTime, attendees, equipment, preferredFloor]);
+  }, [filterKey]);
 
   const hasTimeInputs = startTime !== '' && endTime !== '';
   const hasValidationError = hasTimeInputs && (endTime <= startTime || attendees < 1);
   const isFilterComplete = hasTimeInputs && !hasValidationError;
 
   const availableRooms = isFilterComplete
-    ? rooms
-        .filter((room: { id: string; capacity: number; equipment: string[]; floor: number }) => {
-          if (room.capacity < attendees) return false;
-          if (!equipment.every(eq => room.equipment.includes(eq))) return false;
-          if (preferredFloor !== null && room.floor !== preferredFloor) return false;
-          const hasConflict = reservations.some(
-            (r: { roomId: string; start: string; end: string }) =>
-              r.roomId === room.id && r.start < endTime && r.end > startTime
-          );
-          return !hasConflict;
-        })
-        .sort((a: { floor: number; name: string }, b: { floor: number; name: string }) => {
-          if (a.floor !== b.floor) return a.floor - b.floor;
-          return a.name.localeCompare(b.name);
-        })
+    ? sortRooms(filterAvailableRooms(rooms, { startTime, endTime, attendees, equipment, preferredFloor, reservations }))
     : [];
 
   const createMutation = useCreateReservation();
 
   const handleBook = async () => {
     if (!selectedRoomId) {
-      setErrorMessage('회의실을 선택해주세요.');
+      setErrorMessage(MESSAGES.booking.noRoomSelected);
       return;
     }
 
@@ -78,76 +67,91 @@ export function AvailableRoomList() {
       });
 
       if ('ok' in result && result.ok) {
-        navigate('/', { state: { message: '예약이 완료되었습니다!' } });
+        navigate('/', { state: { message: MESSAGES.booking.success } });
         return;
       }
 
       const errResult = result as { message?: string };
-      setErrorMessage(errResult.message ?? '예약에 실패했습니다.');
+      setErrorMessage(errResult.message ?? MESSAGES.booking.fail);
       setSelectedRoomId(null);
     } catch (err: unknown) {
-      let serverMessage = '예약에 실패했습니다.';
+      let serverMessage: string = MESSAGES.booking.fail;
+
       if (axios.isAxiosError(err)) {
         const data = err.response?.data as { message?: string } | undefined;
         serverMessage = data?.message ?? serverMessage;
       }
+
       setErrorMessage(serverMessage);
       setSelectedRoomId(null);
     }
   };
 
-  if (!isFilterComplete) return null;
+  if (!isFilterComplete) {
+    return null;
+  }
+
+  if (availableRooms.length === 0) {
+    return (
+      <HorizontalPadding>
+        <SectionTitle title="예약 가능 회의실" subtext="0개" />
+        <Spacing size={16} />
+        {errorMessage && (
+          <>
+            <MessageBanner type="error" text={errorMessage} />
+            <Spacing size={12} />
+          </>
+        )}
+        <EmptyState message={MESSAGES.booking.noAvailableRoom} />
+        <Spacing size={16} />
+        <Button display="full" onClick={handleBook} disabled={createMutation.isLoading}>
+          {createMutation.isLoading ? '예약 중...' : '확정'}
+        </Button>
+      </HorizontalPadding>
+    );
+  }
 
   return (
     <HorizontalPadding>
       <SectionTitle title="예약 가능 회의실" subtext={`${availableRooms.length}개`} />
       <Spacing size={16} />
-
       {errorMessage && (
         <>
           <MessageBanner type="error" text={errorMessage} />
           <Spacing size={12} />
         </>
       )}
-
-      {availableRooms.length === 0 ? (
-        <EmptyState message="조건에 맞는 회의실이 없습니다." />
-      ) : (
-        <div
-          css={css`
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-          `}
-        >
-          {availableRooms.map(
-            (room: { id: string; name: string; floor: number; capacity: number; equipment: string[] }) => {
-              const isSelected = selectedRoomId === room.id;
-              return (
-                <CardItem
-                  key={room.id}
-                  isSelectable
-                  isSelected={isSelected}
-                  onClick={() => setSelectedRoomId(room.id)}
-                  ariaLabel={room.name}
-                  title={room.name}
-                  description={`${room.floor}층 · ${room.capacity}명 · ${room.equipment
-                    .map(e => EQUIPMENT_LABELS[e])
-                    .join(', ')}`}
-                  right={
-                    isSelected ? (
-                      <Text typography="t7" fontWeight="bold" color={colors.blue500}>
-                        선택됨
-                      </Text>
-                    ) : undefined
-                  }
-                />
-              );
-            }
-          )}
-        </div>
-      )}
-
+      <div
+        css={css`
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        `}
+      >
+        {availableRooms.map(
+          (room: { id: string; name: string; floor: number; capacity: number; equipment: string[] }) => {
+            const isSelected = selectedRoomId === room.id;
+            return (
+              <CardItem
+                key={room.id}
+                isSelectable
+                isSelected={isSelected}
+                onClick={() => setSelectedRoomId(room.id)}
+                ariaLabel={room.name}
+                title={room.name}
+                description={formatRoomDescription(room)}
+                right={
+                  isSelected ? (
+                    <Text typography="t7" fontWeight="bold" color={colors.blue500}>
+                      선택됨
+                    </Text>
+                  ) : undefined
+                }
+              />
+            );
+          }
+        )}
+      </div>
       <Spacing size={16} />
       <Button display="full" onClick={handleBook} disabled={createMutation.isLoading}>
         {createMutation.isLoading ? '예약 중...' : '확정'}
