@@ -1,6 +1,6 @@
 import { css } from '@emotion/react';
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Spacing, Button, Text } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
 import axios from 'axios';
@@ -14,18 +14,12 @@ import { SectionTitle } from 'components/content/SectionTitle';
 import { MessageBanner } from 'components/feedback/MessageBanner';
 import { EmptyState } from 'components/feedback/EmptyState';
 import { CardItem } from 'components/content/CardItem';
+import { useBookingFilterParams } from '../hooks/useBookingFilterParams';
 
 export function AvailableRoomList() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
 
-  const date = searchParams.get('date') ?? '';
-  const startTime = searchParams.get('startTime') ?? '';
-  const endTime = searchParams.get('endTime') ?? '';
-  const attendees = Number(searchParams.get('attendees')) || 1;
-  const equipmentRaw = searchParams.get('equipment') ?? '';
-  const equipment = useMemo(() => equipmentRaw.split(',').filter(Boolean), [equipmentRaw]);
-  const preferredFloor = searchParams.get('floor') != null ? Number(searchParams.get('floor')) : null;
+  const { date, startTime, endTime, attendees, equipment, preferredFloor } = useBookingFilterParams();
 
   const { data: rooms = [] } = useRooms();
   const { data: reservations = [] } = useReservations(date);

@@ -1,5 +1,4 @@
 import { css } from '@emotion/react';
-import { useSearchParams } from 'react-router-dom';
 import { Spacing, Text } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
 import { formatDate } from 'utils/time';
@@ -13,33 +12,27 @@ import { Chip } from 'components/input/Chip';
 import { TIME_SLOTS } from '../constants/booking';
 import { MESSAGES } from '../constants/messages';
 import { extractFloors } from '../utils/room';
+import { useBookingFilterParams } from '../hooks/useBookingFilterParams';
 
 export function BookingFilterForm() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const { data: rooms = [] } = useRooms();
 
-  const date = searchParams.get('date') ?? formatDate(new Date());
-  const startTime = searchParams.get('startTime') ?? '';
-  const endTime = searchParams.get('endTime') ?? '';
-  const attendees = Number(searchParams.get('attendees')) || 1;
-  const equipment = searchParams.get('equipment')?.split(',').filter(Boolean) ?? [];
-  const preferredFloor = searchParams.get('floor') != null ? Number(searchParams.get('floor')) : null;
+  const {
+    date,
+    setDate,
+    startTime,
+    setStartTime,
+    endTime,
+    setEndTime,
+    attendees,
+    setAttendees,
+    equipment,
+    setEquipment,
+    preferredFloor,
+    setPreferredFloor,
+  } = useBookingFilterParams();
 
   const floors = extractFloors(rooms);
-
-  const setParam = (updates: Record<string, string | null>) => {
-    setSearchParams(
-      prev => {
-        const next = new URLSearchParams(prev);
-        Object.entries(updates).forEach(([key, value]) => {
-          if (value != null) next.set(key, value);
-          else next.delete(key);
-        });
-        return next;
-      },
-      { replace: true }
-    );
-  };
 
   const hasTimeInputs = startTime !== '' && endTime !== '';
 
@@ -54,7 +47,7 @@ export function BookingFilterForm() {
 
   return (
     <>
-      <DateInput label="날짜" value={date} min={formatDate(new Date())} onChange={v => setParam({ date: v })} />
+      <DateInput label="날짜" value={date} min={formatDate(new Date())} onChange={setDate} />
       <Spacing size={14} />
 
       <div
@@ -71,7 +64,7 @@ export function BookingFilterForm() {
           <SelectInput
             label="시작 시간"
             value={startTime}
-            onChange={v => setParam({ startTime: v || null })}
+            onChange={v => setStartTime(v)}
             options={[{ value: '', label: '선택' }, ...TIME_SLOTS.slice(0, -1).map(t => ({ value: t, label: t }))]}
           />
         </div>
@@ -83,7 +76,7 @@ export function BookingFilterForm() {
           <SelectInput
             label="종료 시간"
             value={endTime}
-            onChange={v => setParam({ endTime: v || null })}
+            onChange={v => setEndTime(v)}
             options={[{ value: '', label: '선택' }, ...TIME_SLOTS.slice(1).map(t => ({ value: t, label: t }))]}
           />
         </div>
@@ -101,12 +94,7 @@ export function BookingFilterForm() {
             flex: 1;
           `}
         >
-          <NumberInput
-            label="참석 인원"
-            value={attendees}
-            min={1}
-            onChange={v => setParam({ attendees: v > 1 ? String(v) : null })}
-          />
+          <NumberInput label="참석 인원" value={attendees} min={1} onChange={setAttendees} />
         </div>
         <div
           css={css`
@@ -116,7 +104,7 @@ export function BookingFilterForm() {
           <SelectInput
             label="선호 층"
             value={preferredFloor != null ? String(preferredFloor) : ''}
-            onChange={v => setParam({ floor: v || null })}
+            onChange={v => setPreferredFloor(v ? Number(v) : null)}
             options={[{ value: '', label: '전체' }, ...floors.map(f => ({ value: String(f), label: `${f}층` }))]}
           />
         </div>
@@ -142,7 +130,7 @@ export function BookingFilterForm() {
               isSelected={equipment.includes(eq)}
               onClick={() => {
                 const next = equipment.includes(eq) ? equipment.filter(e => e !== eq) : [...equipment, eq];
-                setParam({ equipment: next.length > 0 ? next.join(',') : null });
+                setEquipment(next);
               }}
             />
           ))}
