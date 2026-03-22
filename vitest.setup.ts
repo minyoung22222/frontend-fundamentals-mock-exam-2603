@@ -37,6 +37,9 @@ HTMLCanvasElement.prototype.getContext = (() => {
 
 HTMLCanvasElement.prototype.toDataURL = () => '';
 
+// happy-dom does not implement window.confirm — stub it so vi.spyOn can override it per test
+window.confirm = () => false;
+
 beforeAll(() => {
   server.listen({ onUnhandledRequest: 'bypass' });
 });
