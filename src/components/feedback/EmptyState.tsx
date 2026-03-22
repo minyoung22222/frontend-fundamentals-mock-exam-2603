@@ -8,7 +8,14 @@ interface Props {
 
 export function EmptyState({ message }: Props) {
   return (
-    <div css={css`padding: 40px 0; text-align: center; background: ${colors.grey50}; border-radius: 14px;`}>
+    <div
+      css={css`
+        padding: 40px 0;
+        text-align: center;
+        background: ${colors.grey50};
+        border-radius: 14px;
+      `}
+    >
       <Text typography="t6" color={colors.grey500}>
         {message}
       </Text>

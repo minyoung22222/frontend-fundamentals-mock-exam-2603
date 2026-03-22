@@ -7,7 +7,13 @@ interface Props {
 
 export function InlineError({ message }: Props) {
   return (
-    <span css={css`color: ${colors.red500}; font-size: 14px;`} role="alert">
+    <span
+      css={css`
+        color: ${colors.red500};
+        font-size: 14px;
+      `}
+      role="alert"
+    >
       {message}
     </span>
   );
