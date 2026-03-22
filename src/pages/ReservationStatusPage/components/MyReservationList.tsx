@@ -1,7 +1,6 @@
 import { css } from '@emotion/react';
-import { useQuery } from '@tanstack/react-query';
 import { Button } from '_tosslib/components';
-import { getRooms } from 'pages/remotes';
+import { useRooms } from 'queries/useRooms';
 import { EQUIPMENT_LABELS } from 'constants/equipment';
 import { EmptyState } from 'components/feedback/EmptyState';
 import { CardItem } from 'components/content/CardItem';
@@ -22,7 +21,7 @@ interface Props {
 }
 
 export function MyReservationList({ reservations, onCancel }: Props) {
-  const { data: rooms = [] } = useQuery(['rooms'], getRooms);
+  const { data: rooms = [] } = useRooms();
 
   const getRoomName = (roomId: string) =>
     rooms.find((room: { id: string; name: string }) => room.id === roomId)?.name ?? roomId;

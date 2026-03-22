@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Spacing, Button } from '_tosslib/components';
-import { getMyReservations, cancelReservation } from 'pages/remotes';
+import { useMyReservations } from './queries/useMyReservations';
+import { useCancelReservation } from './queries/useCancelReservation';
 import { formatDate } from 'utils/time';
 import { PageLayout } from 'components/layout/PageLayout';
 import { PageHeader } from 'components/layout/PageHeader';
@@ -17,7 +17,6 @@ import { MyReservationList } from './components/MyReservationList';
 export function ReservationStatusPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const queryClient = useQueryClient();
   const [date, setDate] = useState(formatDate(new Date()));
 
   const locationState = location.state as { message?: string } | null;
@@ -32,14 +31,8 @@ export function ReservationStatusPage() {
     }
   }, [locationState]);
 
-  const { data: myReservationList = [] } = useQuery(['myReservations'], getMyReservations);
-
-  const cancelMutation = useMutation((id: string) => cancelReservation(id), {
-    onSuccess: () => {
-      queryClient.invalidateQueries(['reservations']);
-      queryClient.invalidateQueries(['myReservations']);
-    },
-  });
+  const { data: myReservationList = [] } = useMyReservations();
+  const cancelMutation = useCancelReservation();
 
   const handleCancel = async (id: string) => {
     try {

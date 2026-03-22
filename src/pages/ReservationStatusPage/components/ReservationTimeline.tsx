@@ -1,9 +1,9 @@
 import { css } from '@emotion/react';
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Text } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
-import { getRooms, getReservations } from 'pages/remotes';
+import { useRooms } from 'queries/useRooms';
+import { useReservations } from 'queries/useReservations';
 import { parseTimeToMinutes, generateTimeSlots } from 'utils/time';
 import { EQUIPMENT_LABELS } from 'constants/equipment';
 import { Tooltip } from 'components/feedback/Tooltip';
@@ -20,10 +20,8 @@ const TOTAL_MINUTES = (TIMELINE_END - TIMELINE_START) * 60;
 const TIMELINE_START_MINUTES = TIMELINE_START * 60;
 
 export function ReservationTimeline({ date }: Props) {
-  const { data: rooms = [] } = useQuery(['rooms'], getRooms);
-  const { data: reservations = [] } = useQuery(['reservations', date], () => getReservations(date), {
-    enabled: !!date,
-  });
+  const { data: rooms = [] } = useRooms();
+  const { data: reservations = [] } = useReservations(date);
 
   const [activeReservation, setActiveReservation] = useState<string | null>(null);
 
