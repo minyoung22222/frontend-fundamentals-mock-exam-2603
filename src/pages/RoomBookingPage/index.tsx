@@ -6,7 +6,8 @@ import { Spacing, Button, Text } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
 import { getRooms, getReservations, createReservation } from 'pages/remotes';
 import axios from 'axios';
-import { formatDate } from 'utils/time';
+import { formatDate, generateTimeSlots } from 'utils/time';
+import { EQUIPMENT_LABELS, ALL_EQUIPMENT } from 'constants/equipment';
 import { PageLayout } from 'components/layout/PageLayout';
 import { PageHeader } from 'components/layout/PageHeader';
 import { HorizontalPadding } from 'components/layout/HorizontalPadding';
@@ -22,22 +23,10 @@ import { InlineError } from 'components/feedback/InlineError';
 import { Chip } from 'components/input/Chip';
 import { CardItem } from 'components/content/CardItem';
 
-const EQUIPMENT_LABELS: Record<string, string> = {
-  tv: 'TV',
-  whiteboard: '화이트보드',
-  video: '화상장비',
-  speaker: '스피커',
-};
 
-const ALL_EQUIPMENT = ['tv', 'whiteboard', 'video', 'speaker'];
-
-const TIME_SLOTS: string[] = [];
-for (let h = 9; h <= 20; h++) {
-  TIME_SLOTS.push(`${String(h).padStart(2, '0')}:00`);
-  if (h < 20) {
-    TIME_SLOTS.push(`${String(h).padStart(2, '0')}:30`);
-  }
-}
+const BOOKING_START_HOUR = 9;
+const BOOKING_END_HOUR = 20;
+const TIME_SLOTS = generateTimeSlots(BOOKING_START_HOUR, BOOKING_END_HOUR);
 
 export function RoomBookingPage() {
   const navigate = useNavigate();
