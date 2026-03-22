@@ -4,6 +4,7 @@ import { Spacing, Button } from '_tosslib/components';
 import { useMyReservations } from './queries/useMyReservations';
 import { useCancelReservation } from './queries/useCancelReservation';
 import { formatDate } from 'utils/time';
+import { MESSAGES } from './constants/messages';
 import { PageLayout } from 'components/layout/PageLayout';
 import { PageHeader } from 'components/layout/PageHeader';
 import { HorizontalPadding } from 'components/layout/HorizontalPadding';
@@ -37,9 +38,9 @@ export function ReservationStatusPage() {
   const handleCancel = async (id: string) => {
     try {
       await cancelMutation.mutateAsync(id);
-      setMessage({ type: 'success', text: '예약이 취소되었습니다.' });
+      setMessage({ type: 'success', text: MESSAGES.cancel.success });
     } catch {
-      setMessage({ type: 'error', text: '취소에 실패했습니다.' });
+      setMessage({ type: 'error', text: MESSAGES.cancel.fail });
     }
   };
 

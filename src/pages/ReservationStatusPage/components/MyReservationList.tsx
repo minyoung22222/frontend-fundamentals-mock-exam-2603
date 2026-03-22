@@ -3,6 +3,8 @@ import { Button } from '_tosslib/components';
 import { useRooms } from 'queries/useRooms';
 import { EQUIPMENT_LABELS } from 'constants/equipment';
 import { EmptyState } from 'components/feedback/EmptyState';
+import { LABELS } from '../constants/labels';
+import { MESSAGES } from '../constants/messages';
 import { CardItem } from 'components/content/CardItem';
 
 interface Reservation {
@@ -27,7 +29,7 @@ export function MyReservationList({ reservations, onCancel }: Props) {
     rooms.find((room: { id: string; name: string }) => room.id === roomId)?.name ?? roomId;
 
   if (reservations.length === 0) {
-    return <EmptyState message="예약 내역이 없습니다." />;
+    return <EmptyState message={LABELS.empty.myReservations} />;
   }
 
   return (
@@ -43,7 +45,7 @@ export function MyReservationList({ reservations, onCancel }: Props) {
           key={res.id}
           title={getRoomName(res.roomId)}
           description={`${res.date} ${res.start}~${res.end} · ${res.attendees}명 · ${
-            res.equipment.map(e => EQUIPMENT_LABELS[e]).join(', ') || '장비 없음'
+            res.equipment.map(e => EQUIPMENT_LABELS[e]).join(', ') || LABELS.reservation.noEquipment
           }`}
           right={
             <Button
@@ -52,7 +54,7 @@ export function MyReservationList({ reservations, onCancel }: Props) {
               size="small"
               onClick={e => {
                 e.stopPropagation();
-                if (window.confirm('정말 취소하시겠습니까?')) {
+                if (window.confirm(MESSAGES.confirm.cancelReservation)) {
                   onCancel(res.id);
                 }
               }}

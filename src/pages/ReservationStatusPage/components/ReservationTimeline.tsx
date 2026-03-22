@@ -4,20 +4,14 @@ import { Text } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
 import { useRooms } from 'queries/useRooms';
 import { useReservations } from 'queries/useReservations';
-import { parseTimeToMinutes, generateTimeSlots } from 'utils/time';
 import { EQUIPMENT_LABELS } from 'constants/equipment';
 import { Tooltip } from 'components/feedback/Tooltip';
+import { HOUR_LABELS } from '../constants/timeline';
+import { toTimelineLeft, toTimelineWidth } from '../utils/timeline';
 
 interface Props {
   date: string;
 }
-
-const TIMELINE_START = 9;
-const TIMELINE_END = 20;
-const TIME_SLOTS = generateTimeSlots(TIMELINE_START, TIMELINE_END);
-const HOUR_LABELS = TIME_SLOTS.filter(t => t.endsWith(':00'));
-const TOTAL_MINUTES = (TIMELINE_END - TIMELINE_START) * 60;
-const TIMELINE_START_MINUTES = TIMELINE_START * 60;
 
 export function ReservationTimeline({ date }: Props) {
   const { data: rooms = [] } = useRooms();
@@ -56,7 +50,7 @@ export function ReservationTimeline({ date }: Props) {
           `}
         >
           {HOUR_LABELS.map(t => {
-            const left = ((parseTimeToMinutes(t) - TIMELINE_START_MINUTES) / TOTAL_MINUTES) * 100;
+            const left = toTimelineLeft(t);
             return (
               <Text
                 key={t}
@@ -121,8 +115,8 @@ export function ReservationTimeline({ date }: Props) {
               `}
             >
               {roomReservations.map(res => {
-                const left = ((parseTimeToMinutes(res.start) - TIMELINE_START_MINUTES) / TOTAL_MINUTES) * 100;
-                const width = ((parseTimeToMinutes(res.end) - parseTimeToMinutes(res.start)) / TOTAL_MINUTES) * 100;
+                const left = toTimelineLeft(res.start);
+                const width = toTimelineWidth(res.start, res.end);
                 const isActive = activeReservation === res.id;
                 return (
                   <div
