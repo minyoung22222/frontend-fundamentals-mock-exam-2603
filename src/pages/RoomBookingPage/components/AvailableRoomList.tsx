@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Spacing, Button, Text } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
-import axios from 'axios';
+import { getServerErrorMessage } from 'utils/error';
 import { useRooms } from 'queries/useRooms';
 import { useCreateReservation } from '../queries/useCreateReservation';
 import { useReservations } from 'queries/useReservations';
@@ -42,7 +42,7 @@ export function AvailableRoomList() {
     ? sortRooms(filterAvailableRooms(rooms, { startTime, endTime, attendees, equipment, preferredFloor, reservations }))
     : [];
 
-  const createMutation = useCreateReservation();
+  const { mutateAsync: createReservation, isLoading: isCreatingReservation } = useCreateReservation();
 
   const handleBook = async () => {
     if (!selectedRoomId) {
@@ -51,7 +51,7 @@ export function AvailableRoomList() {
     }
 
     try {
-      const result = await createMutation.mutateAsync({
+      const result = await createReservation({
         roomId: selectedRoomId,
         date,
         start: startTime,
@@ -67,18 +67,11 @@ export function AvailableRoomList() {
 
       const errResult = result as { message?: string };
       setErrorMessage(errResult.message ?? MESSAGES.booking.fail);
-      setSelectedRoomId(null);
     } catch (err: unknown) {
-      let serverMessage: string = MESSAGES.booking.fail;
-
-      if (axios.isAxiosError(err)) {
-        const data = err.response?.data as { message?: string } | undefined;
-        serverMessage = data?.message ?? serverMessage;
-      }
-
-      setErrorMessage(serverMessage);
-      setSelectedRoomId(null);
+      setErrorMessage(getServerErrorMessage(err, MESSAGES.booking.fail));
     }
+
+    setSelectedRoomId(null);
   };
 
   if (!isFilterComplete) {
@@ -98,8 +91,8 @@ export function AvailableRoomList() {
         )}
         <EmptyState message={MESSAGES.booking.noAvailableRoom} />
         <Spacing size={16} />
-        <Button display="full" onClick={handleBook} disabled={createMutation.isLoading}>
-          {createMutation.isLoading ? '예약 중...' : '확정'}
+        <Button display="full" onClick={handleBook} disabled={isCreatingReservation}>
+          {isCreatingReservation ? '예약 중...' : '확정'}
         </Button>
       </HorizontalPadding>
     );
@@ -147,8 +140,8 @@ export function AvailableRoomList() {
         )}
       </div>
       <Spacing size={16} />
-      <Button display="full" onClick={handleBook} disabled={createMutation.isLoading}>
-        {createMutation.isLoading ? '예약 중...' : '확정'}
+      <Button display="full" onClick={handleBook} disabled={isCreatingReservation}>
+        {isCreatingReservation ? '예약 중...' : '확정'}
       </Button>
     </HorizontalPadding>
   );
