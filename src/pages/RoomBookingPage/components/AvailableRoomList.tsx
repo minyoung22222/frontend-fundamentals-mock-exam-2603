@@ -1,12 +1,11 @@
 import { css } from '@emotion/react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Spacing, Button, Text } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
 import axios from 'axios';
-import { createReservation } from 'pages/remotes';
 import { useRooms } from 'queries/useRooms';
+import { useCreateReservation } from '../queries/useCreateReservation';
 import { useReservations } from 'queries/useReservations';
 import { EQUIPMENT_LABELS } from 'constants/equipment';
 import { HorizontalPadding } from 'components/layout/HorizontalPadding';
@@ -17,7 +16,6 @@ import { CardItem } from 'components/content/CardItem';
 
 export function AvailableRoomList() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
 
   const date = searchParams.get('date') ?? '';
@@ -61,16 +59,7 @@ export function AvailableRoomList() {
         })
     : [];
 
-  const createMutation = useMutation(
-    (data: { roomId: string; date: string; start: string; end: string; attendees: number; equipment: string[] }) =>
-      createReservation(data),
-    {
-      onSuccess: (_data, variables) => {
-        queryClient.invalidateQueries(['reservations', variables.date]);
-        queryClient.invalidateQueries(['myReservations']);
-      },
-    }
-  );
+  const createMutation = useCreateReservation();
 
   const handleBook = async () => {
     if (!selectedRoomId) {
