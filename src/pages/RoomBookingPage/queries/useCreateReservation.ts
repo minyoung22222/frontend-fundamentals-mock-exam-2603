@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createReservation } from 'pages/remotes';
+import { queryKeys } from 'queries/queryKeys';
 
 interface CreateReservationParams {
   roomId: string;
@@ -17,8 +18,8 @@ export function useCreateReservation() {
     (data: CreateReservationParams) => createReservation(data),
     {
       onSuccess: (_data, variables) => {
-        queryClient.invalidateQueries(['reservations', variables.date]);
-        queryClient.invalidateQueries(['myReservations']);
+        queryClient.invalidateQueries(queryKeys.reservations.byDate(variables.date));
+        queryClient.invalidateQueries(queryKeys.myReservations());
       },
     }
   );
